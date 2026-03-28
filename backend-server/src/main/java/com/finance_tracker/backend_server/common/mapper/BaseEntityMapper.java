@@ -1,4 +1,4 @@
-package com.finance_tracker.backend_server.common.util;
+package com.finance_tracker.backend_server.common.mapper;
 
 import java.util.List;
 

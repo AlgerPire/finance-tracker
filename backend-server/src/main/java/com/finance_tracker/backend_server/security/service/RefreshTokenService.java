@@ -7,6 +7,7 @@ import com.finance_tracker.backend_server.user.entity.User;
 import com.finance_tracker.backend_server.user.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,9 +26,9 @@ import java.util.UUID;
  *
  * @author Finance Tracker Team
  * @version 1.0
- * @since 2024
  * @see com.finance_tracker.backend_server.auth.entity.RefreshToken
  * @see com.finance_tracker.backend_server.auth.exception.TokenRefreshException
+ * @since 2024
  */
 @Service
 @Transactional
@@ -45,8 +46,9 @@ public class RefreshTokenService {
      * Constructs a RefreshTokenService with required dependencies.
      *
      * @param refreshTokenRepository repository for refresh token data access
-     * @param userRepository repository for user data access
+     * @param userRepository         repository for user data access
      */
+    @Autowired
     public RefreshTokenService(RefreshTokenRepository refreshTokenRepository, UserRepository userRepository) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.userRepository = userRepository;

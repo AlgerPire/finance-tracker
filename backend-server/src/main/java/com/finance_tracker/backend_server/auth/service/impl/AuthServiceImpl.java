@@ -18,6 +18,7 @@ import com.finance_tracker.backend_server.user.service.RoleService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -68,6 +69,7 @@ public class AuthServiceImpl implements AuthService {
      * @param jwtUtils utility class for JWT operations
      * @param refreshTokenService service for refresh token management
      */
+    @Autowired
     public AuthServiceImpl(
             AuthenticationManager authenticationManager,
             UserRepository userRepository,
