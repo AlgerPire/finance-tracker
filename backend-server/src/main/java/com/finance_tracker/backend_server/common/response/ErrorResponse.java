@@ -1,4 +1,4 @@
-package com.finance_tracker.backend_server.common.exception;
+package com.finance_tracker.backend_server.common.response;
 
 import java.time.Instant;
 
