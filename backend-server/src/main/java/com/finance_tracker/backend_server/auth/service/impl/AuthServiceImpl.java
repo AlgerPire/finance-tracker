@@ -29,10 +29,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -216,8 +213,8 @@ public class AuthServiceImpl implements AuthService {
                 passwordEncoder.encode(signupRequest.getPassword())
         );
 
-        // Assign roles
-        Set<Role> roles = resolveRoles(signupRequest.getRole());
+        // Assign role user
+        Set<Role> roles = Collections.singleton(roleService.findByName(ERole.ROLE_USER));
         user.setRoles(roles);
 
         userRepository.save(user);
@@ -235,23 +232,23 @@ public class AuthServiceImpl implements AuthService {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         if (isAnonymousUser(principal)) {
-            throw new IllegalStateException("Nuk jeni i autentifikuar");
+            throw new IllegalStateException("You are not authenticated.");
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) principal;
         Long userId = userDetails.getId();
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Përdoruesi nuk u gjet"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
         // Verify current password
         if (!passwordEncoder.matches(changePasswordRequest.getCurrentPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Fjalëkalimi aktual është i pasaktë");
+            throw new IllegalArgumentException("Password is incorrect.");
         }
 
         // Ensure new password is different
         if (passwordEncoder.matches(changePasswordRequest.getNewPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Fjalëkalimi i ri duhet të jetë i ndryshëm nga ai aktual");
+            throw new IllegalArgumentException("New Password cannot be the same as the current password.");
         }
 
         // Update password

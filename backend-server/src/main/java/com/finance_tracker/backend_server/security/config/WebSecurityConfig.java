@@ -2,6 +2,7 @@ package com.finance_tracker.backend_server.security.config;
 
 import com.finance_tracker.backend_server.security.filter.AuthEntryPointJwt;
 import com.finance_tracker.backend_server.security.filter.AuthTokenFilter;
+import com.finance_tracker.backend_server.security.filter.RateLimitFilter;
 import com.finance_tracker.backend_server.security.service.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -74,9 +75,16 @@ public class WebSecurityConfig {
 
         http.authenticationProvider(authenticationProvider());
 
+        http.addFilterBefore(rateLimitFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public RateLimitFilter rateLimitFilter() {
+        return new RateLimitFilter();
     }
 
     @Bean

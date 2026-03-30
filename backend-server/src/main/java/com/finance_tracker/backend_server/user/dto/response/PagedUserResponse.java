@@ -1,9 +1,9 @@
-package com.finance_tracker.backend_server.transaction.dto;
+package com.finance_tracker.backend_server.user.dto.response;
 
 import java.util.List;
 
-public record PagedTransactionsResponse(
-        List<TransactionListResponse> content,
+public record PagedUserResponse(
+        List<AdminUserResponse> content,
         int page,
         int size,
         long totalElements,

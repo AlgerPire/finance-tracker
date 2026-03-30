@@ -6,12 +6,14 @@ import com.finance_tracker.backend_server.common.exception.AccountNotFoundExcept
 import com.finance_tracker.backend_server.common.exception.InsufficientFundsException;
 import com.finance_tracker.backend_server.common.exception.InvalidTransactionException;
 import com.finance_tracker.backend_server.common.util.SecurityContextService;
-import com.finance_tracker.backend_server.transaction.dto.CreateTransactionRequest;
-import com.finance_tracker.backend_server.transaction.dto.PagedTransactionsResponse;
-import com.finance_tracker.backend_server.transaction.dto.TransactionListResponse;
-import com.finance_tracker.backend_server.transaction.dto.TransactionResponse;
+import com.finance_tracker.backend_server.transaction.dto.request.CreateTransactionRequest;
+import com.finance_tracker.backend_server.transaction.dto.request.TransferRequest;
+import com.finance_tracker.backend_server.transaction.dto.response.PagedTransactionsResponse;
+import com.finance_tracker.backend_server.transaction.dto.response.TransactionListResponse;
+import com.finance_tracker.backend_server.transaction.dto.response.TransactionResponse;
 import com.finance_tracker.backend_server.transaction.entity.Transaction;
 import com.finance_tracker.backend_server.transaction.entity.enumeration.TransactionType;
+import com.finance_tracker.backend_server.transaction.mapper.TransactionMapper;
 import com.finance_tracker.backend_server.transaction.repository.TransactionRepository;
 import com.finance_tracker.backend_server.transaction.service.TransactionService;
 import com.finance_tracker.backend_server.user.entity.User;
@@ -25,14 +27,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
+/**
+ * Implementation of the {@link TransactionService} interface.
+ */
 @Service
 public class TransactionServiceImpl implements TransactionService {
 
+    /**
+     * The repository for managing transactions.
+     */
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final SecurityContextService securityContextService;
+    private final TransactionMapper transactionMapper;
     private static final int MAX_PAGE_SIZE = 100;
     private static final Sort DEFAULT_SORT =
             Sort.by(Sort.Order.desc("transactionAt"), Sort.Order.desc("id"));
@@ -41,10 +53,11 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionServiceImpl(
             TransactionRepository transactionRepository,
             AccountRepository accountRepository,
-            SecurityContextService securityContextService) {
+            SecurityContextService securityContextService, TransactionMapper transactionMapper) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
         this.securityContextService = securityContextService;
+        this.transactionMapper = transactionMapper;
     }
 
     @Override
@@ -64,16 +77,23 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedTransactionsResponse listTransactionsForCurrentUser(Pageable pageable, TransactionType type) {
+    public PagedTransactionsResponse listTransactionsForCurrentUser(Pageable pageable, TransactionType type, LocalDate from, LocalDate to) {
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new InvalidTransactionException("from must be before or equal to to");
+        }
+        Instant fromInstant =
+                from != null ? from.atStartOfDay(ZoneOffset.UTC).toInstant() : null;
+        Instant toInstant =
+                to != null ? to.atTime(LocalTime.MAX).atZone(ZoneOffset.UTC).toInstant() : null;
         User user = securityContextService.getCurrentUser();
         int size = Math.clamp(pageable.getPageSize(), 1, MAX_PAGE_SIZE);
         Sort sort = pageable.getSort().isSorted() ? pageable.getSort() : DEFAULT_SORT;
         Pageable effective = PageRequest.of(pageable.getPageNumber(), size, sort);
 
         Page<Transaction> page =
-                transactionRepository.findAllInvolvingAccountsOfUser(user.getId(), type, effective);
+                transactionRepository.findAllInvolvingAccountsOfUser(user.getId(), type, fromInstant, toInstant, effective);
         List<TransactionListResponse> content =
-                page.getContent().stream().map(TransactionServiceImpl::toListResponse).toList();
+                page.getContent().stream().map(transactionMapper::toDto).toList();
 
         return new PagedTransactionsResponse(
                 content,
@@ -83,6 +103,52 @@ public class TransactionServiceImpl implements TransactionService {
                 page.getTotalPages(),
                 page.isFirst(),
                 page.isLast());
+    }
+
+    @Override
+    @Transactional
+    public TransactionResponse transferUsingAccountIdentification(TransferRequest request) {
+        if (request.sourceAccountIdentification()
+                .equalsIgnoreCase(request.targetAccountIdentification())) {
+            throw new InvalidTransactionException("Source and target account must differ");
+        }
+        User user = securityContextService.getCurrentUser();
+        Instant when = request.transactionAt() != null ? request.transactionAt() : Instant.now();
+
+        Account source = accountRepository
+                .findByAccountIdentificationAndUser_IdAndActiveTrue(
+                        request.sourceAccountIdentification(), user.getId())
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "Source account not found, inactive, or not owned by you"));
+
+        Account target = accountRepository
+                .findByAccountIdentificationAndActiveTrue(
+                        request.targetAccountIdentification())
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "Target account not found or inactive"));
+
+        if (source.getCurrencyType() != target.getCurrencyType()) {
+            throw new InvalidTransactionException(
+                    "Transfer is only allowed between accounts with the same currency");
+        }
+        assertSufficientBalance(source, request.amount());
+        source.setBalance(source.getBalance().subtract(request.amount()));
+        target.setBalance(target.getBalance().add(request.amount()));
+        accountRepository.save(source);
+        accountRepository.save(target);
+
+        Transaction transaction = new Transaction();
+        transaction.setUser(user);
+        transaction.setType(TransactionType.TRANSFER);
+        transaction.setAmount(request.amount());
+        transaction.setAccount(source);
+        transaction.setSourceAccount(source);
+        transaction.setTargetAccount(target);
+        transaction.setDescription(request.description());
+        transaction.setTransactionAt(when);
+        transaction = transactionRepository.save(transaction);
+
+        return transactionMapper.toTransactionResponse(transaction, source.getBalance());
     }
 
     private TransactionResponse deposit(User user, BigDecimal amount, Long accountId, String description, Instant when) {
@@ -102,7 +168,7 @@ public class TransactionServiceImpl implements TransactionService {
         depositTransaction.setTransactionAt(when);
         depositTransaction = transactionRepository.save(depositTransaction);
 
-        return toResponse(depositTransaction, account.getBalance());
+        return transactionMapper.toTransactionResponse(depositTransaction, account.getBalance());
     }
 
     private TransactionResponse withdrawal(User user, BigDecimal amount, Long accountId, String description, Instant when) {
@@ -123,16 +189,10 @@ public class TransactionServiceImpl implements TransactionService {
         withdrawalTransaction.setTransactionAt(when);
         withdrawalTransaction = transactionRepository.save(withdrawalTransaction);
 
-        return toResponse(withdrawalTransaction, currentAccount.getBalance());
+        return transactionMapper.toTransactionResponse(withdrawalTransaction, currentAccount.getBalance());
     }
 
-    private TransactionResponse transfer(
-            User user,
-            BigDecimal amount,
-            Long sourceAccountId,
-            Long targetAccountId,
-            String description,
-            Instant when) {
+    private TransactionResponse transfer(User user, BigDecimal amount, Long sourceAccountId, Long targetAccountId, String description, Instant when) {
         if (sourceAccountId == null || targetAccountId == null) {
             throw new InvalidTransactionException("sourceAccountId and targetAccountId are required for a transfer");
         }
@@ -161,7 +221,7 @@ public class TransactionServiceImpl implements TransactionService {
         transferTransaction.setTransactionAt(when);
         transferTransaction = transactionRepository.save(transferTransaction);
 
-        return toResponse(transferTransaction, sourceAccount.getBalance());
+        return transactionMapper.toTransactionResponse(transferTransaction, sourceAccount.getBalance());
     }
 
     private Account loadActiveOwnedAccount(Long accountId, Long userId) {
@@ -182,43 +242,4 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 
-    private static TransactionResponse toResponse(
-            Transaction transaction,
-            BigDecimal accountBalanceAfter) {
-        Account currentAccount = transaction.getAccount();
-        Account sourceAccount = transaction.getSourceAccount();
-        Account targetAccount = transaction.getTargetAccount();
-        return new TransactionResponse(
-                transaction.getId(),
-                transaction.getType(),
-                transaction.getAmount(),
-                currentAccount != null ? currentAccount.getId() : null,
-                sourceAccount != null ? sourceAccount.getId() : null,
-                targetAccount != null ? targetAccount.getId() : null,
-                accountBalanceAfter,
-                transaction.getDescription(),
-                transaction.getTransactionAt(),
-                transaction.getCreatedAt());
-    }
-
-    private static TransactionListResponse toListResponse(Transaction transaction) {
-        Account currentAccount = transaction.getAccount();
-        Account sourceAccount = transaction.getSourceAccount();
-        Account targetAccount = transaction.getTargetAccount();
-        return new TransactionListResponse(
-                transaction.getId(),
-                transaction.getType(),
-                transaction.getAmount(),
-                currentAccount != null ? currentAccount.getCurrencyType().toString() : null,
-                currentAccount != null ? currentAccount.getId() : null,
-                sourceAccount != null ? sourceAccount.getId() : null,
-                targetAccount != null ? targetAccount.getId() : null,
-                sourceAccount != null ? sourceAccount.getUser().getUsername() : null,
-                sourceAccount != null ? sourceAccount.getAccountIdentification() : null,
-                targetAccount != null ? targetAccount.getUser().getUsername() : null,
-                targetAccount != null ? targetAccount.getAccountIdentification() : null,
-                transaction.getDescription(),
-                transaction.getTransactionAt(),
-                transaction.getCreatedAt());
-    }
 }

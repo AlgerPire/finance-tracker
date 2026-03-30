@@ -1,4 +1,4 @@
-package com.finance_tracker.backend_server.transaction.dto;
+package com.finance_tracker.backend_server.transaction.dto.response;
 
 
 import com.finance_tracker.backend_server.transaction.entity.enumeration.TransactionType;

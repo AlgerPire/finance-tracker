@@ -1,4 +1,4 @@
-package com.finance_tracker.backend_server.transaction.dto;
+package com.finance_tracker.backend_server.transaction.dto.request;
 
 import com.finance_tracker.backend_server.transaction.entity.enumeration.TransactionType;
 import jakarta.validation.constraints.DecimalMin;
