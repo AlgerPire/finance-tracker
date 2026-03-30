@@ -1,0 +1,26 @@
+# Compiled output – the build stage produces its own target/
+target/
+
+# IDE & editor folders
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker files (not needed inside the image)
+Dockerfile
+.dockerignore
+
+# Docs
+*.md
+HELP.md

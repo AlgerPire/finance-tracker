@@ -119,6 +119,14 @@ finance_tracker:
     jwtExpirationMs: 432000000
     # Refresh token expiration: 7 days (in milliseconds)
     jwtRefreshExpirationMs: 604800000
+#    admin setup
+    admin:
+      username: ${ADMIN_USERNAME:admin}
+      email: ${ADMIN_EMAIL:admin@admin.com}
+      password: ${ADMIN_PASSWORD:financeTracker}
+    rate-limit:
+      auth-max-requests: ${RATE_LIMIT_AUTH_MAX:10}
+      auth-refill-minutes: ${RATE_LIMIT_AUTH_REFILL_MINUTES:1}
 
 
 ---

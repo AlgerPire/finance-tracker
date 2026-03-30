@@ -1,4 +1,4 @@
-package com.finance_tracker.backend_server.account.dto;
+package com.finance_tracker.backend_server.account.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

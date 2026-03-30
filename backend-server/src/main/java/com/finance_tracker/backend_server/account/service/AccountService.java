@@ -1,11 +1,14 @@
 package com.finance_tracker.backend_server.account.service;
 
-import com.finance_tracker.backend_server.account.dto.AccountListResponse;
-import com.finance_tracker.backend_server.account.dto.AccountResponse;
-import com.finance_tracker.backend_server.account.dto.CreateAccountRequest;
-import com.finance_tracker.backend_server.account.dto.ChangeAccountStatusRequest;
-import com.finance_tracker.backend_server.account.dto.UpdateAccountRequest;
+import com.finance_tracker.backend_server.account.dto.response.AccountListResponse;
+import com.finance_tracker.backend_server.account.dto.response.AccountResponse;
+import com.finance_tracker.backend_server.account.dto.request.CreateAccountRequest;
+import com.finance_tracker.backend_server.account.dto.request.ChangeAccountStatusRequest;
+import com.finance_tracker.backend_server.account.dto.request.UpdateAccountRequest;
 
+/**
+ * Service interface for account operations.
+ */
 public interface AccountService {
 
     /**

@@ -184,7 +184,7 @@ public class AuthController {
             @ApiResponse(responseCode = "403", description = "Access denied - Admin role required")
     })
     @PostMapping("/change-password")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
         logger.debug("Password change request received");
 

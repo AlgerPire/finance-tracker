@@ -1,4 +1,4 @@
-package com.finance_tracker.backend_server.account.dto;
+package com.finance_tracker.backend_server.account.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 

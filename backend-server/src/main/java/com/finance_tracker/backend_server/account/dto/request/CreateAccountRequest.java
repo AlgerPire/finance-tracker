@@ -1,4 +1,4 @@
-package com.finance_tracker.backend_server.account.dto;
+package com.finance_tracker.backend_server.account.dto.request;
 
 import com.finance_tracker.backend_server.account.entity.enumeration.AccountType;
 import com.finance_tracker.backend_server.account.entity.enumeration.CurrencyType;

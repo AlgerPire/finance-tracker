@@ -1,13 +1,14 @@
 package com.finance_tracker.backend_server.account.service.impl;
 
-import com.finance_tracker.backend_server.account.dto.AccountListResponse;
-import com.finance_tracker.backend_server.account.dto.AccountResponse;
-import com.finance_tracker.backend_server.account.dto.CreateAccountRequest;
-import com.finance_tracker.backend_server.account.dto.ChangeAccountStatusRequest;
-import com.finance_tracker.backend_server.account.dto.UpdateAccountRequest;
+import com.finance_tracker.backend_server.account.dto.response.AccountListResponse;
+import com.finance_tracker.backend_server.account.dto.response.AccountResponse;
+import com.finance_tracker.backend_server.account.dto.request.CreateAccountRequest;
+import com.finance_tracker.backend_server.account.dto.request.ChangeAccountStatusRequest;
+import com.finance_tracker.backend_server.account.dto.request.UpdateAccountRequest;
 import com.finance_tracker.backend_server.account.entity.Account;
 import com.finance_tracker.backend_server.account.entity.enumeration.AccountType;
 import com.finance_tracker.backend_server.account.entity.enumeration.CurrencyType;
+import com.finance_tracker.backend_server.account.mapper.AccountMapper;
 import com.finance_tracker.backend_server.account.repository.AccountRepository;
 import com.finance_tracker.backend_server.account.service.AccountService;
 import com.finance_tracker.backend_server.account.support.AccountIdentificationGenerator;
@@ -30,14 +31,18 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountIdentificationGenerator accountIdentificationGenerator;
 
+    private final AccountMapper accountMapper;
+
+
     @Autowired
     public AccountServiceImpl(
             AccountRepository accountRepository,
             SecurityContextService securityContextService,
-            AccountIdentificationGenerator accountIdentificationGenerator) {
+            AccountIdentificationGenerator accountIdentificationGenerator, AccountMapper accountMapper) {
         this.accountRepository = accountRepository;
         this.securityContextService = securityContextService;
         this.accountIdentificationGenerator = accountIdentificationGenerator;
+        this.accountMapper = accountMapper;
     }
 
     @Override
@@ -52,7 +57,7 @@ public class AccountServiceImpl implements AccountService {
         account.setCurrencyType(request.currencyType());
         account.setAccountIdentification(accountIdentificationGenerator.generateUnique());
         account.setActive(true);
-        return toResponse(accountRepository.save(account));
+        return accountMapper.toDto(accountRepository.save(account));
     }
 
     @Override
@@ -65,7 +70,7 @@ public class AccountServiceImpl implements AccountService {
         account.setAccountType(request.accountType());
         account.setBalance(request.balance());
         account.setCurrencyType(request.currencyType());
-        return toResponse(accountRepository.save(account));
+        return accountMapper.toDto(accountRepository.save(account));
     }
 
     @Override
@@ -75,7 +80,7 @@ public class AccountServiceImpl implements AccountService {
         Account account = accountRepository.findByIdAndUser_Id(accountId, owner.getId())
                 .orElseThrow(() -> new AccountNotFoundException("Account not found!"));
         account.setActive(request.active());
-        return toResponse(accountRepository.save(account));
+        return accountMapper.toDto(accountRepository.save(account));
     }
 
     @Override
@@ -84,7 +89,7 @@ public class AccountServiceImpl implements AccountService {
         User owner = securityContextService.getCurrentUser();
         List<AccountResponse> accounts = accountRepository.findAllByUser_IdAndActiveTrueOrderByCreatedAtDesc(owner.getId())
                 .stream()
-                .map(this::toResponse)
+                .map(accountMapper::toDto)
                 .toList();
         if (accounts.isEmpty()) {
             return new AccountListResponse(accounts, "You haven't created any account yet.");
@@ -98,7 +103,7 @@ public class AccountServiceImpl implements AccountService {
         User owner = securityContextService.getCurrentUser();
         Account account = accountRepository.findByIdAndUser_IdAndActiveTrue(accountId, owner.getId())
                 .orElseThrow(() -> new AccountNotFoundException("Account not found!"));
-        return toResponse(account);
+        return accountMapper.toDto(account);
     }
 
     private void assertNoDuplicateAccountForUpdate(
@@ -108,19 +113,6 @@ public class AccountServiceImpl implements AccountService {
             throw new DuplicateAccountException(
                     "You already have a " + accountType + " account in " + currencyType);
         }
-    }
-
-    private AccountResponse toResponse(Account account) {
-        return new AccountResponse(
-                account.getId(),
-                account.getAccountIdentification(),
-                account.getAccountType(),
-                account.getBalance(),
-                account.getCurrencyType(),
-                account.isActive(),
-                account.getCreatedAt(),
-                account.getUpdatedAt()
-        );
     }
 
     private void accountExistsCheck(Long ownerId, AccountType accountType, CurrencyType currencyType) {
