@@ -1,6 +1,7 @@
 package com.finance_tracker.backend_server.account.mapper;
 
 import com.finance_tracker.backend_server.account.dto.response.AccountResponse;
+import com.finance_tracker.backend_server.account.dto.response.AccountSummaryResponse;
 import com.finance_tracker.backend_server.account.dto.response.AdminAccountResponse;
 import com.finance_tracker.backend_server.account.entity.Account;
 import com.finance_tracker.backend_server.common.mapper.BaseEntityMapper;
@@ -18,6 +19,8 @@ public interface AccountMapper extends BaseEntityMapper<AccountResponse, Account
     default Account toEntity(AccountResponse dto) {
         throw new UnsupportedOperationException("AccountResponse cannot be mapped back to Account");
     }
+
+    AccountSummaryResponse toSummaryDto(Account account);
 
     @Mapping(target = "ownerUsername", source = "user.username")
     AdminAccountResponse toAdminResponse(Account account);

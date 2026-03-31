@@ -2,6 +2,8 @@ package com.finance_tracker.backend_server.user.mapper;
 
 import com.finance_tracker.backend_server.common.mapper.BaseEntityMapper;
 import com.finance_tracker.backend_server.user.dto.response.AdminUserResponse;
+import com.finance_tracker.backend_server.user.dto.response.UserProfileResponse;
+import com.finance_tracker.backend_server.user.dto.response.UserSummaryResponse;
 import com.finance_tracker.backend_server.user.entity.Role;
 import com.finance_tracker.backend_server.user.entity.User;
 import org.mapstruct.Mapper;
@@ -17,6 +19,11 @@ public interface UserMapper extends BaseEntityMapper<AdminUserResponse, User> {
     @Override
     @Mapping(target = "roles", source = "roles", qualifiedByName = "rolesToStrings")
     AdminUserResponse toDto(User user);
+
+    @Mapping(target = "roles", source = "roles", qualifiedByName = "rolesToStrings")
+    UserProfileResponse toProfileDto(User user);
+
+    UserSummaryResponse toSummaryDto(User user);
 
     @Override
     default User toEntity(AdminUserResponse dto) {

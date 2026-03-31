@@ -2,6 +2,7 @@ package com.finance_tracker.backend_server.account.controller;
 
 import com.finance_tracker.backend_server.account.dto.response.AccountListResponse;
 import com.finance_tracker.backend_server.account.dto.response.AccountResponse;
+import com.finance_tracker.backend_server.account.dto.response.AccountSummaryListResponse;
 import com.finance_tracker.backend_server.account.dto.request.CreateAccountRequest;
 import com.finance_tracker.backend_server.account.dto.request.ChangeAccountStatusRequest;
 import com.finance_tracker.backend_server.account.dto.request.UpdateAccountRequest;
@@ -75,5 +76,10 @@ public class AccountController {
         return ResponseEntity.ok(accountService.getAccountDetails(accountId));
     }
 
-
+    @Operation(summary = "List accounts by user", description = "Returns all accounts (active and inactive) belonging to the specified user, without balance")
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<@NonNull AccountSummaryListResponse> listAccountsByUserId(@PathVariable Long userId) {
+        logger.debug("Listing all accounts for userId: {}", userId);
+        return ResponseEntity.ok(accountService.listAccountsByUserId(userId));
+    }
 }

@@ -48,6 +48,24 @@ public interface TransactionRepository extends JpaRepository<@NonNull Transactio
     @Query(
             value = """
                 SELECT t FROM Transaction t
+                WHERE (t.account.id = :accountId
+                   OR t.sourceAccount.id = :accountId
+                   OR t.targetAccount.id = :accountId)
+                """,
+            countQuery = """
+                SELECT count(t) FROM Transaction t
+                WHERE (t.account.id = :accountId
+                   OR t.sourceAccount.id = :accountId
+                   OR t.targetAccount.id = :accountId)
+                """)
+    Page<Transaction> findAllByAccountId(
+            @Param("accountId") Long accountId,
+            Pageable pageable);
+
+    @EntityGraph(attributePaths = {"account", "sourceAccount", "targetAccount"})
+    @Query(
+            value = """
+                SELECT t FROM Transaction t
                 WHERE t.type IN :types
                   AND (:userId IS NULL OR t.user.id = :userId)
                   AND t.transactionAt >= :fromBound

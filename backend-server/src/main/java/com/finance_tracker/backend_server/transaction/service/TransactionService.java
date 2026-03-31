@@ -15,6 +15,8 @@ public interface TransactionService {
     PagedTransactionsResponse listTransactionsForCurrentUser(
             Pageable pageable, TransactionType type, LocalDate from, LocalDate to);
 
+    PagedTransactionsResponse listTransactionsByAccountId(Long accountId, Pageable pageable);
+
     TransactionResponse transferUsingAccountIdentification(TransferRequest request);
 
 

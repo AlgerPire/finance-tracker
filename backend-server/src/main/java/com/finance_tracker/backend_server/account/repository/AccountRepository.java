@@ -27,6 +27,8 @@ public interface AccountRepository extends JpaRepository<@NonNull Account, @NonN
 
     List<Account> findAllByUser_IdAndActiveTrueOrderByCreatedAtDesc(Long userId);
 
+    List<Account> findAllByUser_IdOrderByCreatedAtDesc(Long userId);
+
     boolean existsByAccountIdentification(String accountIdentification);
 
     Optional<Account> findByIdAndActiveTrue(Long id);

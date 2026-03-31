@@ -2,6 +2,7 @@ package com.finance_tracker.backend_server.account.service;
 
 import com.finance_tracker.backend_server.account.dto.response.AccountListResponse;
 import com.finance_tracker.backend_server.account.dto.response.AccountResponse;
+import com.finance_tracker.backend_server.account.dto.response.AccountSummaryListResponse;
 import com.finance_tracker.backend_server.account.dto.request.CreateAccountRequest;
 import com.finance_tracker.backend_server.account.dto.request.ChangeAccountStatusRequest;
 import com.finance_tracker.backend_server.account.dto.request.UpdateAccountRequest;
@@ -35,5 +36,10 @@ public interface AccountService {
      * Get account details for the current user
      */
     AccountResponse getAccountDetails(Long accountId);
+
+    /**
+     * Returns all accounts (active and inactive) belonging to a specific user, without balance.
+     */
+    AccountSummaryListResponse listAccountsByUserId(Long userId);
 
 }
