@@ -4,6 +4,7 @@ import com.finance_tracker.backend_server.common.util.SecurityContextService;
 import com.finance_tracker.backend_server.user.dto.response.UserListResponse;
 import com.finance_tracker.backend_server.user.dto.response.UserProfileResponse;
 import com.finance_tracker.backend_server.user.dto.response.UserSummaryResponse;
+import com.finance_tracker.backend_server.user.entity.enumeration.ERole;
 import com.finance_tracker.backend_server.user.mapper.UserMapper;
 import com.finance_tracker.backend_server.user.repository.UserRepository;
 import com.finance_tracker.backend_server.user.service.UserService;
@@ -39,7 +40,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserListResponse listAllUsers() {
-        List<UserSummaryResponse> users = userRepository.findAll()
+        Long currentUserId = securityContextService.getCurrentUser().getId();
+        List<UserSummaryResponse> users = userRepository
+                .findAllExcludingRoleAndUser(ERole.ROLE_ADMIN, currentUserId)
                 .stream()
                 .map(userMapper::toSummaryDto)
                 .toList();

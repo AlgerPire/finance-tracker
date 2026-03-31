@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -62,4 +63,23 @@ public interface UserRepository extends JpaRepository<@NonNull User, @NonNull Lo
     @Query("SELECT u FROM User u JOIN u.roles r WHERE r.name = :role")
     Page<User> findAllWithRoles(
             @Param("role") ERole role, Pageable pageable);
+
+    /**
+     * Returns all users that do not have the given role and are not the excluded user.
+     *
+     * @param excludedRole  role to filter out (e.g. ROLE_ADMIN)
+     * @param excludedUserId id of the user to exclude (e.g. the caller)
+     * @return list of matching users
+     */
+    @EntityGraph(attributePaths = {"roles"})
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.id <> :excludedUserId
+              AND NOT EXISTS (
+                  SELECT r FROM u.roles r WHERE r.name = :excludedRole
+              )
+            """)
+    List<User> findAllExcludingRoleAndUser(
+            @Param("excludedRole") ERole excludedRole,
+            @Param("excludedUserId") Long excludedUserId);
 }
