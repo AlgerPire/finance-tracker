@@ -80,14 +80,14 @@ public class RefreshTokenService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
-        // Delete existing token if present
+
         Optional<RefreshToken> existingToken = refreshTokenRepository.findByUser(user);
         existingToken.ifPresent(token -> {
             refreshTokenRepository.delete(token);
+            refreshTokenRepository.flush();
             logger.debug("Deleted existing refresh token for user: {}", user.getUsername());
         });
 
-        // Create new refresh token
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
                 .expiryDate(Instant.now().plusMillis(refreshTokenDurationMs))
