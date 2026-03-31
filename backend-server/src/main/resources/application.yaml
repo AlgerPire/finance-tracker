@@ -15,9 +15,9 @@ spring:
   # =============================================================================
   datasource:
     # Local development configuration
-    url: jdbc:postgresql://localhost:5432/finance-tracker
-    username: postgres
-    password: 1234
+    url: jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}
+    username: ${PGUSER}
+    password: ${PGPASSWORD}
     driver-class-name: org.postgresql.Driver
 
     # HikariCP Connection Pool Configuration
