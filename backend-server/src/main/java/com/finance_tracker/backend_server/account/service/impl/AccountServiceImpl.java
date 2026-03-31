@@ -2,6 +2,8 @@ package com.finance_tracker.backend_server.account.service.impl;
 
 import com.finance_tracker.backend_server.account.dto.response.AccountListResponse;
 import com.finance_tracker.backend_server.account.dto.response.AccountResponse;
+import com.finance_tracker.backend_server.account.dto.response.AccountSummaryListResponse;
+import com.finance_tracker.backend_server.account.dto.response.AccountSummaryResponse;
 import com.finance_tracker.backend_server.account.dto.request.CreateAccountRequest;
 import com.finance_tracker.backend_server.account.dto.request.ChangeAccountStatusRequest;
 import com.finance_tracker.backend_server.account.dto.request.UpdateAccountRequest;
@@ -104,6 +106,19 @@ public class AccountServiceImpl implements AccountService {
         Account account = accountRepository.findByIdAndUser_IdAndActiveTrue(accountId, owner.getId())
                 .orElseThrow(() -> new AccountNotFoundException("Account not found!"));
         return accountMapper.toDto(account);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AccountSummaryListResponse listAccountsByUserId(Long userId) {
+        List<AccountSummaryResponse> accounts = accountRepository.findAllByUser_IdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(accountMapper::toSummaryDto)
+                .toList();
+        if (accounts.isEmpty()) {
+            return new AccountSummaryListResponse(accounts, "No accounts found for user " + userId + ".");
+        }
+        return new AccountSummaryListResponse(accounts, null);
     }
 
     private void assertNoDuplicateAccountForUpdate(

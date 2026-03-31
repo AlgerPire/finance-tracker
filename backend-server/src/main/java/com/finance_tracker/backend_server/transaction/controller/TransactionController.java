@@ -90,6 +90,23 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.listTransactionsForCurrentUser(pageable, type, from, to));
     }
 
+    /**
+     * List transactions for a specific account.
+     */
+    @Operation(
+            summary = "List transactions by account",
+            description = "Paginated transactions for a specific account owned by the authenticated user. "
+                    + "Includes transactions where the account appears as the main, source, or target account.")
+    @GetMapping("/account/{accountId}")
+    public ResponseEntity<@NonNull PagedTransactionsResponse> listTransactionsByAccountId(
+            @PathVariable Long accountId,
+            @ParameterObject
+            @PageableDefault(size = 20, sort = {"transactionAt", "id"}, direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        logger.info("List transactions for accountId: {}", accountId);
+        return ResponseEntity.ok(transactionService.listTransactionsByAccountId(accountId, pageable));
+    }
+
     @Operation(
             summary = "Transfer between accounts using account identification code",
             description = "Transfers funds from an account you own to any active account "

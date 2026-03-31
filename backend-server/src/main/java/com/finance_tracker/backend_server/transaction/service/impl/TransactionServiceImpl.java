@@ -106,6 +106,32 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PagedTransactionsResponse listTransactionsByAccountId(Long accountId, Pageable pageable) {
+        User owner = securityContextService.getCurrentUser();
+        accountRepository.findByIdAndUser_Id(accountId, owner.getId())
+                .orElseThrow(() -> new AccountNotFoundException(
+                        "Account not found or does not belong to the authenticated user"));
+
+        int size = Math.clamp(pageable.getPageSize(), 1, MAX_PAGE_SIZE);
+        Sort sort = pageable.getSort().isSorted() ? pageable.getSort() : DEFAULT_SORT;
+        Pageable effective = PageRequest.of(pageable.getPageNumber(), size, sort);
+
+        Page<Transaction> page = transactionRepository.findAllByAccountId(accountId, effective);
+        List<TransactionListResponse> content =
+                page.getContent().stream().map(transactionMapper::toDto).toList();
+
+        return new PagedTransactionsResponse(
+                content,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isFirst(),
+                page.isLast());
+    }
+
+    @Override
     @Transactional
     public TransactionResponse transferUsingAccountIdentification(TransferRequest request) {
         if (request.sourceAccountIdentification()
