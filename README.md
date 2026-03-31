@@ -145,3 +145,12 @@ The backend follows a classic **layered architecture**: Controller â†’ Service â
 |---------|---------|
 | `dev` | Local development; connects to `localhost:5432`, verbose SQL logging |
 | `prod` | Production; reads all secrets from environment variables (`DATABASE_URL`, `JWT_SECRET`, etc.) |
+
+
+### What's Next?
+
+- Request for money option, similar to Paypal, where users can request money from other users.
+- Accounting reports, including balance sheets, income statements, and cash flow statements.
+- Securing application with OAuth2.
+- Implementing notifications (email, SMS, push, etc.) for important events (daily summary, account balance changes, etc.)
+- Implementing Spring Batch for background processing and data import/export.
